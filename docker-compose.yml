@@ -1,0 +1,105 @@
+version: '3.8'
+services:
+  sbwork-api:
+    build: ./sbwork-api
+    ports:
+      - "8000:8000"
+    container_name: fastapi-app
+    depends_on:
+      - mysql-db
+      - redis-server
+      - minio-server
+      - elasticsearch
+      - kibana
+    environment:
+      - DB_HOST=mysql-db
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=Sbac@19032003
+      - DB_DATABASE=sbworkdb
+      - REDIS_HOST=redis-server
+      - REDIS_PORT=6379
+      - MINIO_ENDPOINT=minio-server
+      - MINIO_PORT=9000
+      - MINIO_ACCESS_KEY=DDqHhYEKcLHdC6Y2Y4aV
+      - MINIO_SECRET_KEY=wk1rd9ohZq9aghNmowPHTpN6VFjCSA6XrubS8W7H
+    networks:
+      - app-network
+
+  mysql-db:
+    image: mysql:8.0
+    container_name: mysql-container
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: Sbac@19032003
+      MYSQL_DATABASE: sbworkdb
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - app-network
+
+  redis-server:
+    image: redis:latest
+    container_name: redis-container
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
+  minio-server:
+    image: minio/minio:latest
+    container_name: minio-container
+    restart: always
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: Sbac1903
+      MINIO_ROOT_PASSWORD: Sbac@19032003
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio-data:/data
+    networks:
+      - app-network
+
+  elasticsearch:
+    image: elasticsearch:8.11.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - app-network
+
+  kibana:
+    image: kibana:8.11.0
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    networks:
+      - app-network
+
+
+
+volumes:
+  mysql-data:
+  minio-data:
+  elasticsearch_data:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge
